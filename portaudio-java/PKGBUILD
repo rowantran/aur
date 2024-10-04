@@ -1,0 +1,49 @@
+# Maintainer: Rowan Tran <rowanjames.tran@gmail.com
+pkgname=portaudio-java
+pkgver=r13.2ec5cc4
+pkgrel=1
+pkgdesc="Java wrapper for the PortAudio audio library"
+arch=('x86_64')
+url="https://github.com/philburk/portaudio-java"
+license=('LicenseRef-PortAudio')
+groups=()
+depends=('portaudio' 'java-environment-common')
+makedepends=('git')
+provides=("$pkgname")
+conflicts=("$pkgname")
+replaces=()
+backup=()
+options=()
+install=
+source=('git+https://github.com/philburk/portaudio-java.git')
+noextract=()
+sha256sums=('SKIP')
+
+# Please refer to the 'USING VCS SOURCES' section of the PKGBUILD man page for
+# a description of each element in the source array.
+
+pkgver() {
+	cd "$srcdir/$pkgname"
+	printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+	export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/lib
+	export JAVA_HOME=/usr/lib/jvm/default
+}
+
+build() {
+	cd "$srcdir/$pkgname"
+	cmake .
+}
+
+package() {
+	cd "$srcdir/$pkgname"
+	make DESTDIR="$pkgdir/" install
+	LIBJPORTAUDIO_LIB_PATH=$(find $pkgdir/usr/local/lib -name 'libjportaudio*.so')
+	# Strip $pkgdir prefix so that installed symlink points to the correct path
+	LIBJPORTAUDIO_TRUE_PATH=${LIBJPORTAUDIO_LIB_PATH#$pkgdir}
+	echo "Found libjportaudio.so at $LIBJPORTAUDIO_TRUE_PATH, symlinking to libjportaudio.so"
+	ln -s $LIBJPORTAUDIO_TRUE_PATH "$pkgdir/usr/local/lib/libjportaudio.so"
+	install -Dm644 LICENSE.txt "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
